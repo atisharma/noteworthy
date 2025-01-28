@@ -35,28 +35,31 @@ You can use the inline latex equation environments, suitable for processing with
         (document.load-page)
         (.get-pixmap :dpi 300)))))
 
-(defn pdf-to-format [fname * [output-format "latex"] [save True] [verbose False]]
-  "Convert pdf to a latex snippet."
+(defn pdf-to-format [fname * [output-format "tex"] [save True] [verbose False]]
+  "Convert pdf to a latex or markdown snippet."
   (let [client (chat-client "claude")
         basename (. (Path fname) stem)
         prompt (match output-format
-                 "latex" latex-prompt
-                 "markdown" markdown-prompt)]
-    (.join "\n\n"
-      (lfor [p pixmap] (enumerate (pdf-to-pixmaps fname))
-        (let [png-name f"/tmp/nw_{basename}_p{p :04d}.png"]
-          (.save pixmap png-name)   
-          (when verbose
-            (print png-name))
-          (let [msgs [(_msg "user" (image-content client prompt png-name))]
-                tex (.join "" (_completion client msgs))]
-            (.unlink (Path png-name))
-            (if save
-              (spit f"{basename}.tex" tex)
-              tex)))))))
+                 "tex" latex-prompt
+                 "md" markdown-prompt)
+        output (.join "\n\n"
+                 (gfor [p pixmap] (enumerate (pdf-to-pixmaps fname))
+                   (let [png-name f"/tmp/nw_{basename}_p{p :04d}.png"]
+                     (.save pixmap png-name)
+                     (when verbose
+                       (print png-name))
+                     (let [msgs [(_msg "user" (image-content client prompt png-name))]
+                           tex (.join "" (_completion client msgs))]
+                       (.unlink (Path png-name))
+                       tex))))]
+    (if save
+      (spit f"{basename}.{output-format}" output)
+      output)))
 
 (defn pdf-to-markdown [fname #** kwargs]
-  (pdf-to-format fname :output-format "markdown" #** kwargs))
+  "Convert pdf to a markdown snippet."
+  (pdf-to-format fname :output-format "md" #** kwargs))
 
 (defn pdf-to-latex [fname #** kwargs]
-  (pdf-to-format fname :output-format "latex" #** kwargs))
+  "Convert pdf to a latex snippet."
+  (pdf-to-format fname :output-format "tex" #** kwargs))
