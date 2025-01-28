@@ -35,7 +35,7 @@ You can use the inline latex equation environments, suitable for processing with
         (document.load-page)
         (.get-pixmap :dpi 300)))))
 
-(defn pdf-to-format [fname * [output-format "latex"] [save True] [verbose false]]
+(defn pdf-to-format [fname * [output-format "latex"] [save True] [verbose False]]
   "Convert pdf to a latex snippet."
   (let [client (chat-client "claude")
         basename (. (Path fname) stem)
