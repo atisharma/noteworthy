@@ -9,6 +9,7 @@ LLM-related tools for command-line use.
 - pdftolatex: convert pdf (as image) to latex
 - review: Act as a reviewer for a paper
 - editor: Act as an editor for a paper
+- proofread: Act as a proofreader for a paper
 
 
 ## Components
