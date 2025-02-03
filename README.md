@@ -5,8 +5,8 @@ LLM-related tools for command-line use.
 
 ## Scope
 
-- pdftomd: convert pdf (as image) to markdown
-- pdftolatex: convert pdf (as image) to latex
+- pdf2md: convert pdf (as image) to markdown
+- pdf2latex: convert pdf (as image) to latex
 - review: Act as a reviewer for a paper
 - editor: Act as an editor for a paper
 - proofread: Act as a proofreader for a paper
