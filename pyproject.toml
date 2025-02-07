@@ -5,7 +5,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "noteworthy"
+name = "nwy"
 description = "Tools to create large language model pipelines to process text."
 authors = [
     {name = "Ati Sharma", email = "ati+noteworthy@agalmic.ltd"},
