@@ -18,3 +18,8 @@ LLM-related tools for command-line use.
 - noteworthy/pipeline   [applied templates, use trag/template]
 - noteworthy/util       [local utils]
 
+## Install
+
+```bash
+$ pip install nwy
+```
