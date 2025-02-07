@@ -2,44 +2,26 @@
 Utilities that don't fit anywhere else.
 "
 
-;; TODO: move what we can back to hyjinx
+(require hyrule [->>])
 
 (import hyjinx [config llm])
 
-(import os)
 (import pathlib [Path])
 (import platformdirs [user-config-dir])
 
 
 (defclass NoteWorthyError [RuntimeError])
 
-;; * file and toml utilities (taken from trag)
+;; * file and toml config utilities
 ;; -----------------------------------------------------------------------------
 
-(defn file-exists [path]
-  "Return Path object if it exists as a file, otherwise None."
-  (when (.exists path)
-    path))
-
-(defn find-toml-file [#^ str name]
-  "Locate a toml file.
-  It will look under, in order:
-    - `$pwd/templates/`         -- templates in the current dir
-    - `$XDG_CONFIG_DIR/trag/`   -- user-defined config templates
-    - `$module_dir/templates/`  -- the standard templates
-  "
-  (let [fname (+ name ".toml")]
-    (or
-      (file-exists (Path "templates" fname))
-      (file-exists (Path (user-config-dir __package__) fname))
-      (file-exists (Path (os.path.dirname __file__) "templates" fname)) ; TODO: use Path not os
-      (raise (FileNotFoundError fname)))))
-
 (defn load-config [#^ str [fname "config"]]
-  "Load a config file.
-  Defaults to `.config/noteworthy/config.toml`.
-  See `find-toml-file` for search order."
-  (config (find-toml-file fname)))
+  "Load a config file from `$XDG_CONFIG_DIR/noteworthy/config.toml`.
+  Defaults to `.config/noteworthy/config.toml`."
+  (->> fname
+    (Path (user-config-dir __package__))
+    (find-toml-file)
+    (config)))
 
 (defn chat-client [#^ str client]
   "Create a chat client object from the specification in the config file.

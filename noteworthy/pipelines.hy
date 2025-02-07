@@ -1,8 +1,6 @@
 "
 pdf -> markdown
 pdf -> latex
-
-Maybe these could all be within trag?
 "
 
 (require hyrule.argmove [-> ->>])
