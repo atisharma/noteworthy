@@ -1,6 +1,8 @@
 "
 pdf -> markdown
+img -> markdown
 pdf -> latex
+img -> latex
 "
 
 (require hyrule.argmove [-> ->>])
@@ -24,6 +26,9 @@ Assume text is not in a codeblock. Do not wrap any text in codeblocks.
 You can use the inline latex equation environments, suitable for processing with mathjax or similar.")
 
 
+;; * Conversion from PDF (PDF -> pixmap -> png -> output)
+;; -----------------------------------------------------------------------------
+
 (defn pdf-to-pixmaps [fname]
   "Convert a pdf to an iterator over pages,
   returning pixmap each page."
@@ -33,9 +38,9 @@ You can use the inline latex equation environments, suitable for processing with
         (document.load-page)
         (.get-pixmap :dpi 300)))))
 
-(defn pdf-to-format [fname * [output-format "tex"] [save True] [verbose False]]
+(defn pdf-to-format [fname * [output-format "tex"] [save True] [client ""] [verbose False]]
   "Convert pdf to a latex or markdown snippet."
-  (let [client (chat-client "claude")
+  (let [_client (chat-client client)
         basename (. (Path fname) stem)
         prompt (match output-format
                  "tex" latex-prompt
@@ -46,10 +51,10 @@ You can use the inline latex equation environments, suitable for processing with
                      (.save pixmap png-name)
                      (when verbose
                        (print png-name))
-                     (let [msgs [(_msg "user" (image-content client prompt png-name))]
-                           tex (.join "" (_completion client msgs))]
+                     (let [msgs [(_msg "user" (image-content _client prompt png-name))]
+                           text (.join "" (_completion _client msgs))]
                        (.unlink (Path png-name))
-                       tex))))]
+                       text))))]
     (if save
       (spit f"{basename}.{output-format}" output)
       output)))
@@ -61,3 +66,34 @@ You can use the inline latex equation environments, suitable for processing with
 (defn pdf-to-latex [fname #** kwargs]
   "Convert pdf to a latex snippet."
   (pdf-to-format fname :output-format "tex" #** kwargs))
+
+
+;; * Conversion from image (png, jpeg, etc)
+;; -----------------------------------------------------------------------------
+
+(defn img-to-format [fname [output-format "tex"] [save True] [client ""] [verbose False]]
+  "Convert an image in supported format to a latex or markdown snippet.
+  Currently, Claude supports image/jpeg, image/png, image/gif and image/webp.
+  OpenAI supports image/jpeg, image/png and image/webp.
+  Other providers are probably similar."
+  (let [_client (chat-client client)
+        basename (. (Path fname) stem)
+        prompt (match output-format
+                 "tex" latex-prompt
+                 "md" markdown-prompt)
+        output (let [msgs [(_msg "user" (image-content _client prompt fname))]
+                     text (.join "" (_completion _client msgs))]
+                 (when verbose
+                   (print fname))
+                 text)]
+    (if save
+      (spit f"{basename}.{output-format}" output)
+      output)))
+
+(defn img-to-markdown [fname #** kwargs]
+  "Convert img to a markdown snippet."
+  (img-to-format fname :output-format "md" #** kwargs))
+
+(defn img-to-latex [fname #** kwargs]
+  "Convert img to a latex snippet."
+  (img-to-format fname :output-format "tex" #** kwargs))

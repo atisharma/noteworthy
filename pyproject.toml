@@ -41,8 +41,10 @@ version = {attr = "noteworthy.__version__"}
 "*" = ["*.hy", "*.toml"]
 
 [project.scripts]
-pdf2md = "noteworthy.cli:pdftomd"
-pdf2latex = "noteworthy.cli:pdftolatex"
+pdf2md = "noteworthy.cli:pdf2md"
+pdf2latex = "noteworthy.cli:pdf2latex"
+img2md = "noteworthy.cli:img2md"
+img2latex = "noteworthy.cli:img2latex"
 
 # ... other project metadata fields as listed in:
 #     https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
