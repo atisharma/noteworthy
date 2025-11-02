@@ -9,22 +9,14 @@ img -> latex
 
 (import hyjinx.lib [spit])
 (import hyjinx.llm [image-content _completion _msg])
-(import noteworthy.util [chat-client])
+(import noteworthy.util [chat-client load-prompt])
 (import pathlib [Path])
 (import fitz)
 
 
 ;; a nod to sn2md for inspiration
-(setv latex-prompt "Convert the image to valid latex. In your response, only include what would appear inside the document environment. Just start directly with the content, don't give any preamble.
-If there is a diagram or image, and it is a simple diagram that you can create in tikz, create a tikz diagram for it. When it is unclear what an image is, don't output anything for it.
-Assume text is not in a codeblock. Do not wrap any text in codeblocks.
-Use the `equation` or `equation*` environments for equations. You can assume the `mathtools`, `tikz` and other common packages are already loaded.")
-
-(setv markdown-prompt "Convert the image to valid markdown. Just start directly with the content, don't give any preamble.
-If there is a diagram or image, and it is a simple diagram that you can create in mermaid, create a mermaid diagram for it. When it is unclear what an image is, don't output anything for it.
-Assume text is not in a codeblock. Do not wrap any text in codeblocks.
-You can use the inline latex equation environments, suitable for processing with mathjax or similar.")
-
+(setv latex-prompt (load-prompt "latex"))
+(setv markdown-prompt (load-prompt "markdown"))
 
 ;; * Conversion from PDF (PDF -> pixmap -> png -> output)
 ;; -----------------------------------------------------------------------------
@@ -38,9 +30,9 @@ You can use the inline latex equation environments, suitable for processing with
         (document.load-page)
         (.get-pixmap :dpi 300)))))
 
-(defn pdf-to-format [fname * [output-format "tex"] [save True] [client ""] [verbose False]]
+(defn pdf-to-format [fname * [output-format "tex"] [save True] [verbose False]]
   "Convert pdf to a latex or markdown snippet."
-  (let [_client (chat-client client)
+  (let [_client (chat-client "vision")
         basename (. (Path fname) stem)
         prompt (match output-format
                  "tex" latex-prompt
@@ -71,12 +63,12 @@ You can use the inline latex equation environments, suitable for processing with
 ;; * Conversion from image (png, jpeg, etc)
 ;; -----------------------------------------------------------------------------
 
-(defn img-to-format [fname [output-format "tex"] [save True] [client ""] [verbose False]]
+(defn img-to-format [fname [output-format "tex"] [save True] [verbose False]]
   "Convert an image in supported format to a latex or markdown snippet.
   Currently, Claude supports image/jpeg, image/png, image/gif and image/webp.
   OpenAI supports image/jpeg, image/png and image/webp.
   Other providers are probably similar."
-  (let [_client (chat-client client)
+  (let [_client (chat-client "vision")
         basename (. (Path fname) stem)
         prompt (match output-format
                  "tex" latex-prompt

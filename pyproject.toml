@@ -6,28 +6,34 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nwy"
-description = "Tools to create large language model pipelines to process text."
+description = "A knowledge management system, using RAG, like a meta-zettelkasten."
 authors = [
     {name = "Ati Sharma", email = "ati+noteworthy@agalmic.ltd"},
 ]
 dynamic = ["version", "readme"]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 keywords = ["hy", "hylang", "utilities", "llm", "openai"]
 license = {file = "LICENSE"}
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Lisp",
     "Topic :: Software Development :: Libraries",
-    "Topic :: Utilities"
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 dependencies = [
-    "hy",
+    "arxiv-to-prompt",
+    "fvdb>=0.1.8",
+    "hy>=1.1.0",
     "hyrule",
-    "hyjinx[llm]",
-    "pymupdf"
+    "hyjinx[llm]>=1.1.1",
+    "mcp",
+    "pymupdf",
+    "trag>=0.0.14",
+    "tqdm"
 ]
 
 [project.urls]
@@ -41,10 +47,15 @@ version = {attr = "noteworthy.__version__"}
 "*" = ["*.hy", "*.toml"]
 
 [project.scripts]
+
 pdf2md = "noteworthy.cli:pdf2md"
 pdf2latex = "noteworthy.cli:pdf2latex"
 img2md = "noteworthy.cli:img2md"
 img2latex = "noteworthy.cli:img2latex"
+
+distil = "noteworthy.cli:distil"
+recall = "noteworthy.cli:recall"
+synthesize = "noteworthy.cli:synthesize"
 
 # ... other project metadata fields as listed in:
 #     https://packaging.python.org/en/latest/guides/writing-pyproject-toml/

@@ -1,0 +1,17 @@
+services:
+  noteworthy-mcp-server:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    #environment:
+    volumes:
+      - /var/log/mcp:/app/logs
+      - config:/.config
+      - cache:/.cache
+    networks:
+      - noteworthy-network
+
+networks:
+  noteworthy-network:
+    driver: bridge

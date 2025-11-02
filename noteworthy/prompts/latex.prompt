@@ -1,0 +1,4 @@
+Convert the image to valid latex. In your response, only include what would appear inside the document environment. Just start directly with the content, don't give any preamble.
+If there is a diagram or image, and it is a simple diagram that you can create in tikz, create a tikz diagram for it. When it is unclear what an image is, don't output anything for it.
+Assume text is not in a codeblock. Do not wrap any text in codeblocks.
+Use the `equation` or `equation*` environments for equations. You can assume the `mathtools`, `tikz` and other common packages are already loaded.
