@@ -8,7 +8,7 @@ synthesis, and record it in vector databases.
 (require hyrule [-> ->> of])
 (require hyjinx.llm [definstruct])
 
-(import asyncio [run gather Semaphore])
+(import asyncio [run gather Semaphore Lock])
 (import collections.abc [Generator])
 (import itertools [chain])
 
@@ -16,6 +16,7 @@ synthesis, and record it in vector databases.
 (import json-repair.json-repair [repair-json])
 (import json)
 (import datetime [datetime])
+(import logging)
 (import pathlib [Path])
 (import warnings [warn])
 
@@ -35,10 +36,12 @@ synthesis, and record it in vector databases.
 (import noteworthy.util [NoteWorthyError
                          NoteWorthyWarning
                          load-config 
-                         async-chat-client
                          instruct
+                         async-chat-client
                          load-prompt
                          validate])
+
+(setv logger (logging.getLogger __package__))
 
 (setv config (load-config))
 
@@ -47,6 +50,13 @@ synthesis, and record it in vector databases.
 
 (setv _distil-token-length (:token-length config 6000)
       _max_concurrent_tasks (:concurrency config 4))
+
+;; The vdb write and insert lock
+(setv lock (Lock))
+
+;; Connections are closed when these client objects are garbage collected.
+(setv distil-client (async-chat-client "distillation"))
+(setv synth-client (async-chat-client "synthesis"))
 
 
 (defn :async distil [#^ str text * #^ str source]
@@ -66,23 +76,23 @@ synthesis, and record it in vector databases.
     list[dict]: A list of dictionaries, where each dictionary is a knowledge atom.
     Returns empty list on failure."
   (try
-    (let [client (async-chat-client "distillation")
-          response (await (instruct client (load-prompt "distil") text))
+    (let [response (await (instruct distil-client (load-prompt "distil") text))
           atoms (-> response
                   (repair-json :return-objects True)
                   (validate ["title" "date" "idea" "details"]))]
       (when atoms
-        (db.ingest facts-vdb (lfor atom atoms
-                               {"added" (now)
-                                "embedding" (embed (json.dumps atom))
-                                "hash" (hash-id (json.dumps atom))
-                                "source" source
-                                #** atom}))
-        (db.write facts-vdb)
+        (with [:async lock]
+          (db.ingest facts-vdb (lfor atom atoms
+                                 {"added" (now)
+                                  "embedding" (embed (json.dumps atom))
+                                  "hash" (hash-id (json.dumps atom))
+                                  "source" source
+                                  #** atom}))
+          (db.write facts-vdb))
         atoms))
     (except [e [Exception]]
-      (warn f"Error in `foundry/distil` while splitting from {source}: {e}." NoteWorthyWarning)
-      [])))
+      (logger.warn f"Error in `foundry.distil` over {source}: {e}")
+      [{"error" f"Error in `foundry.distil` over {source}: {e}"}])))
 
 (defn :async synthesize [#^ (of list dict) atoms * #^ str [context ""]]
   "Synthesizes a new, higher-order understanding from notes.
@@ -99,9 +109,8 @@ synthesis, and record it in vector databases.
   Returns:
     dict: A dictionary representing the candidate synthesis note.
     Returns None if synthesis fails."
-  (let [client (async-chat-client "synthesis")
-        text (.join "\n---\n" [(json.dumps atoms) context])
-        insight (-> (await (instruct client (load-prompt "synthesize") text))
+  (let [text (.join "\n---\n" [(json.dumps atoms) context])
+        insight (-> (await (instruct synth-client (load-prompt "synthesize") text))
                   (repair-json :return-objects True)
                   (validate ["theme"
                              "understanding"
@@ -112,14 +121,15 @@ synthesis, and record it in vector databases.
         is-good (and decision
                      (= (:decision decision None) "RECORD")
                      (> (:confidence decision 0) 0.8))]
-    (db.ingest insights-vdb [{"added" (now)
-                              "embedding" (embed (json.dumps insight))
-                              "hash" (hash-id (json.dumps insight))
-                              "source" (hash-id (json.dumps (:sources insight)))
-                              "is_good" is-good
-                              #** decision
-                              #** insight}])
-    (db.write insights-vdb)
+    (with [:async lock]
+      (db.ingest insights-vdb [{"added" (now)
+                                "embedding" (embed (json.dumps insight))
+                                "hash" (hash-id (json.dumps insight))
+                                "source" (hash-id (json.dumps (:sources insight)))
+                                "is_good" is-good
+                                #** decision
+                                #** insight}])
+      (db.write insights-vdb))
     {#** insight #** decision}))
 
 (defn :async referee [#^ dict insight]
@@ -136,8 +146,7 @@ synthesis, and record it in vector databases.
       reasoning and confidence; or None if the referee fails."
   (let [similar-insights (db.similar insights-vdb (json.dumps insight))
         text (+ (json.dumps similar-insights) "\n---\n" (json.dumps insight))
-        client (async-chat-client "synthesis")
-        decision (-> (await (instruct client (load-prompt "referee") text))
+        decision (-> (await (instruct synth-client (load-prompt "referee") text))
                    (repair-json :return-objects True)
                    (validate ["decision"
                               "novelty_type"
@@ -241,9 +250,9 @@ synthesis, and record it in vector databases.
                "facts-vdb" facts-vdb
                "insights-vdb" insights-vdb
                "else" (raise (NoteWorthyError "Bad argument: vdb must be either 'facts-vdb' or 'insights-vdb'.")))]
-    (db.prune insights-vdb)
-    (db.write insights-vdb)
-    (db.info insights-vdb)))
+    (db.prune _vdb)
+    (db.write _vdb)
+    (db.info _vdb)))
 
 (defn info [#^ str [vdb "facts-vdb"]]
   "Give information about the chosen vdb.
@@ -257,7 +266,7 @@ synthesis, and record it in vector databases.
                "facts-vdb" facts-vdb
                "insights-vdb" insights-vdb
                "else" (raise (NoteWorthyError "Bad argument: vdb must be either 'facts-vdb' or 'insights-vdb'.")))]
-    (db.info insights-vdb)))
+    (db.info _vdb)))
 
 
 (defn distil-files [#^ (| Path str) fname-or-directory]
@@ -278,9 +287,19 @@ synthesis, and record it in vector databases.
     (raise (FileNotFoundError fname-or-directory))))
 
 (defn :async distil-file [#^ (| Path str) fname]
-  "Distil a file.
-  Split according to file type (with error handling).
-  Returns a list of knowledge atoms."
+  "Distils the contents of the text file with path `fname` into a list of
+  self-contained knowledge atoms, stored for later retrieval.
+
+  This function sends the full source text to an LLM with a specialized prompt
+  to identify and structure every distinct idea, event, or finding into a
+  consistent JSON format, and stores it in the facts vdb for later recall.
+
+  Args:
+    fname (str): The local path for the file to be processed.
+
+  Returns:
+    list[dict]: A list of dictionaries, where each dictionary is a knowledge atom.
+    Returns empty list on failure."
   ;; TODO overlap of approx. 900 tokens
 
   (defn distil-fname [text]
@@ -291,6 +310,7 @@ synthesis, and record it in vector databases.
         chunks (try
                  (split._chunk-by-filetype (slurp fname) ft :max-length _distil-token-length)
                  (except [e [Exception]]
+                   (logger.warn f"Error in `foundry/distil-file` while splitting {fname}: {e}.")
                    (raise (NoteWorthyError f"Error in `foundry/distil-file` while splitting {fname}: {e}."))))]
     (with [:async _ sem]
       (await (async-tqdm.gather #* (map distil-fname chunks) :leave False)))))

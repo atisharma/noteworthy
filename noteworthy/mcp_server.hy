@@ -14,20 +14,23 @@ synthesis and RAG tools.
 (import mcp.server.fastmcp [FastMCP Context])
 
 (import hyjinx.lib [slurp ls filenames])
-(import noteworthy [__version__])
+(import json)
 (import trag) 
 (import fvdb) 
-(import noteworthy [foundry])
+(import noteworthy [__version__ foundry util])
 (import trag [retrieve])
 
 
 (logging.basicConfig :level logging.INFO)
 (setv logger (logging.getLogger __package__))
 
-(setv mcp-config (:server (load-config) {}))
+(setv mcp-config (:server (util.load-config) {}))
 (setv mcp (FastMCP "noteworthy_mcp_server"
             :host (:host mcp-config "0.0.0.0")
             :port (:port mcp-config 3000)))
+
+(logging.info "--- noteworthy config ---")
+(logging.info (json.dumps mcp-config :indent 2))
 
 
 ;; tools from the foundry
@@ -75,8 +78,8 @@ synthesis and RAG tools.
     distil-arxiv('1706-03762')"
   (await
     (-> arxiv-id
-      (arxiv-latex)
-      (foundry.distil :source url))))
+      (retrieve.arxiv-latex)
+      (foundry.distil :source f"arXiv://{arxiv-id}"))))
 
 (defn :async [(mcp.tool)] distil-youtube [#^ str youtube-id]
   "Retrieves a YouTube transcript, and then distils it into a list of
@@ -93,12 +96,11 @@ synthesis and RAG tools.
     list[dict]: A list of dictionaries, where each dictionary is a knowledge atom.
     
   Example:
-    distil-youtube('xyz123')
-  "
-  (await (-> url
-           (retrieve.youtube)
-           (foundry.distil :source url))))
-
+    distil-youtube('dQw4w9WgXcQ')"
+  (await
+    (-> youtube-id
+      (retrieve.youtube)
+      (foundry.distil :source f"youtube://{youtube-id}"))))
 
 (defn :async [(mcp.tool)] record-insight [#^ str text * #^ int [top 5]] 
   "Record an important insight arising from the conversation.
@@ -125,6 +127,7 @@ synthesis and RAG tools.
 ((mcp.tool) foundry.distil)
 
 ;; vdb management tools
+((mcp.tool) foundry.distil-file)
 ((mcp.tool) foundry.delete-bad)
 ((mcp.tool) foundry.delete)
 ((mcp.tool) foundry.prune)
@@ -182,6 +185,8 @@ synthesis and RAG tools.
 
 ((mcp.tool) os.listdir)
 
+;; WARNING - if you are storing private keys or tokens,
+;; they will be readable.
 (defn [(mcp.tool)] read-file [#^ str fname] 
   "Read a file in the filesystem and return it as a string.
 

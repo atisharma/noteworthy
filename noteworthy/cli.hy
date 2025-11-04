@@ -1,4 +1,5 @@
 (import click)
+(import json [dumps])
 
 (import noteworthy.pipelines [pdf-to-latex
                               pdf-to-markdown
@@ -61,9 +62,9 @@
   [(click.command)
    (click.argument "files_or_directories" :nargs -1)]
   distil [files-or-directories]
-  (import foundry [distil-files])
+  (import noteworthy [foundry])
   (for [file-or-directory files-or-directories]
-    (let [records (distil-files file-or-directory)])))
+    (let [records (foundry.distil-files file-or-directory)])))
   
 (cli.add-command distil)
 
@@ -73,8 +74,8 @@
    (click.option "-r" "--top" :default 6 :type int :help "Return just top n results.")
    (click.argument "query")]
   recall [query * mode top]
-  (import foundry [recall])
-  (let [facts (recall query :mode mode :top top)]
+  (import noteworthy [foundry])
+  (let [facts (foundry.recall query :mode mode :top top)]
     (click.echo
       (dumps facts :indent 2))))
 
@@ -84,13 +85,34 @@
   [(click.command)
    (click.option "-m" "--mode" :default "hybrid" :help "Recall mode (hybrid | facts | insights).")
    (click.option "-r" "--top" :default 6 :type int :help "Return just top n results.")
-   (click.argument "context" :help "The thought to consider.")]
-  recall [insight * mode top]
-  (import foundry [synthesize recall])
-  (let [facts (recall query :mode mode :top top)
-        insight (synthesize facts :context context)]
+   (click.argument "context")]
+  synthesize [insight * mode top]
+  (import noteworthy [foundry]) 
+  (let [facts (foundry.recall query :mode mode :top top)
+        insight (foundry.synthesize facts :context context)]
     (click.echo
       (dumps facts :indent 2)
       (dumps insight :indent 2))))
 
 (cli.add-command synthesize)
+
+(defn ; prune
+  [(click.command)]
+  prune []
+  (import noteworthy [foundry])
+  (click.echo
+    (foundry.prune "insights-vdb")
+    (foundry.prune "facts-vdb")))
+
+(cli.add-command prune)
+
+(defn ; info
+  [(click.command)]
+  nwy-info []
+  (import noteworthy [foundry])
+  (click.echo
+    (foundry.info "insights-vdb")
+    (foundry.info "facts-vdb")))
+
+(cli.add-command nwy-info)
+

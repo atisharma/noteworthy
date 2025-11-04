@@ -4,13 +4,17 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    #environment:
-    volumes:
-      - /var/log/mcp:/app/logs
-      - config:/.config
-      - cache:/.cache
     networks:
       - noteworthy-network
+
+# if you want to download embeddings only once,
+# or need HuggingFace authentication, configure the following
+# as appropriate for your local setup.
+#
+#    environment:
+#      - HF_HOME=/srv/huggingface
+#    volumes:
+#      - /srv/huggingface:/srv/huggingface:rw
 
 networks:
   noteworthy-network:

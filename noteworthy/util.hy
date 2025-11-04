@@ -9,7 +9,6 @@ Utilities that don't fit anywhere else.
 (import logging)
 (import pathlib [Path])
 (import platformdirs [user-state-path user-config-path])
-(import warnings [warn])
 
 (import hyjinx [first config llm slurp])
 (import fvdb.config [cfg :as fvdb-config])
@@ -67,8 +66,8 @@ Utilities that don't fit anywhere else.
     client))
 
 (defn :async instruct [client #^ str system-prompt #^ str text #** kwargs]
-  "Private LLM instruction. OpenAI-compatible only."
-  ;; TODO support non-streaming async in hyjinx
+  "Private LLM instruction.
+  OpenAI-compatible only."
   (let [messages [{"role" "system" "content" system-prompt}
                   {"role" "user" "content" text}]
         response (await
@@ -120,5 +119,4 @@ Utilities that don't fit anywhere else.
 
 (defmethod validate [#^ str records #^ (of list str) keys]
   "Enforce that every dict in the list has the listed keys, defaulting to value None, removing extraneous keys."
-  (warn f"JSON to records validation failed.\nkeys:\n{keys}\n\nstring:\n{records}" NoteWorthyWarning)
-  [])
+  [{"error" f"JSON validation failed: {records} -> {(.join ", " keys)}"}])
