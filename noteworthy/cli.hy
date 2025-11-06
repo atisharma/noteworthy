@@ -7,7 +7,7 @@
                               img-to-markdown])
 
 
-;; TODO: option to override the default model, multiple files as args
+;; TODO: option to override the default fvdb model
 
 (defn [(click.group)]
       cli [])
@@ -55,8 +55,6 @@
 
 ;; knowledge distillation and synthesis vdb tools
 ;; -------------------------------------------------------------------------
-
-;; TODO foundry
 
 (defn ; distil
   [(click.command)

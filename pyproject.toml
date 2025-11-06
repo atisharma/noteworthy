@@ -1,8 +1,6 @@
 [build-system]
 requires = [ "setuptools>=64" ]
 build-backend = "setuptools.build_meta"
-#requires = ["hatchling"]
-#build-backend = "hatchling.build"
 
 [project]
 name = "nwy"
@@ -48,17 +46,7 @@ version = {attr = "noteworthy.__version__"}
 "*" = ["*.hy", "*.toml"]
 
 [project.scripts]
-
-pdf2md = "noteworthy.cli:pdf2md"
-pdf2latex = "noteworthy.cli:pdf2latex"
-img2md = "noteworthy.cli:img2md"
-img2latex = "noteworthy.cli:img2latex"
-
-distil = "noteworthy.cli:distil"
-recall = "noteworthy.cli:recall"
-synthesize = "noteworthy.cli:synthesize"
-prune = "noteworthy.cli:prune"
-info = "noteworthy.cli:info"
+nwy = "noteworthy.cli:cli"
 
 # ... other project metadata fields as listed in:
 #     https://packaging.python.org/en/latest/guides/writing-pyproject-toml/

@@ -1,12 +1,3 @@
-# TODO
-
-- package noteworthy as a docker image
-  *  copy fvdb and noteworthy config from image build dir
-- set the local vdb volume in the docker config file to /app/vdb
-- then ingest all the fancy jupiter/srv/vdb data
-- pr arxiv-to-prompt for nwy usage
-
-
 # Noteworthy MCP server
 
 Noteworthy consists of knowledge distillation and synthesis RAG functions.
@@ -184,7 +175,7 @@ LLM-related tools for command-line use. These may be moved to another project.
 
 ## Components
 
-- noteworthy/cli        [apply stdio to tools]
+- noteworthy/cli        [apply tools to files]
 - noteworthy/pipeline   [applied templates, use trag/template]
 - noteworthy/util       [local utils]
 - noteworthy/foundry    [the knowledge distillation and synthesis tools]
@@ -193,13 +184,25 @@ LLM-related tools for command-line use. These may be moved to another project.
 
 ## Install / upgrade
 
+In your venv,
+
 ```bash
 $ pip install -U nwy
 ```
 
 
+## Command-line usage
+
+For the distillation step in particular, you might want to use the cli commands.
+
+```bash
+$ nwy --help
+$ fvdb --help
+```
+
+
 ## Acknowledgements
 
-Thanks to [LeoGitGuy.alex-paper-search-mcp](https://github.com/LeoGitGuy/alex-paper-search-mcp/) for the simple and elegant example.
-Thanks to [arxiv-to-prompt](https://https://github.com/takashiishida/arxiv-to-prompt).
-Thanks to [FastMCP](https://gofastmcp.com). Thanks to the various other dependencies.
+[arxiv-to-prompt](https://https://github.com/takashiishida/arxiv-to-prompt),
+[LeoGitGuy.alex-paper-search-mcp](https://github.com/LeoGitGuy/alex-paper-search-mcp/) for the simple and elegant example,
+[FastMCP](https://gofastmcp.com).

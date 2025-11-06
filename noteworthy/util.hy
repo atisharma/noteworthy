@@ -15,6 +15,10 @@ Utilities that don't fit anywhere else.
 (import trag.template [file-exists])
 
 
+(setv config (load-config)
+      _max-concurrent-tasks (:concurrency config 4)
+      api-limiter (Semaphore _max-concurrent-tasks))  
+
 (defclass NoteWorthyError [RuntimeError])
 (defclass NoteWorthyWarning [UserWarning])
 
@@ -50,17 +54,19 @@ Utilities that don't fit anywhere else.
       (llm.model-load client model))
     client))
 
-(defn async-chat-client [#^ str client]
+(defn async-chat-client [#^ str client #** kwargs]
   "Create a chat client object from the specification in the config file.
   See `hyjinx.llm` for methods and further documentation."
   (let [client-cfg (get (load-config) client)
         provider (.pop client-cfg "provider")
         model (.pop client-cfg "model" None)
+        options (.pop client-cfg "options" {})
         client (match provider
                  "anthropic" (llm.AsyncAnthropic #** client-cfg)
                  "openai" (llm.AsyncOpenAI #** client-cfg)
                  "tabby" (llm.AsyncTabbyClient #** client-cfg)
                  "huggingface" (llm.AsyncHuggingface #** client-cfg))]
+    (setv client.defaults options)
     (when model
       (llm.model-load client model))
     client))
@@ -68,15 +74,17 @@ Utilities that don't fit anywhere else.
 (defn :async instruct [client #^ str system-prompt #^ str text #** kwargs]
   "Private LLM instruction.
   OpenAI-compatible only."
-  (let [messages [{"role" "system" "content" system-prompt}
-                  {"role" "user" "content" text}]
-        response (await
-                   (client.chat.completions.create
-                     :messages messages
-                     :model client.model
-                     :stream False
-                     #** kwargs))]
-    (. (. (first response.choices) message) content)))
+  (with [:async _ api-limiter]
+    (let [messages [{"role" "system" "content" system-prompt}
+                    {"role" "user" "content" text}]
+          response (await
+                     (client.chat.completions.create
+                       :messages messages
+                       :model client.model
+                       :stream False
+                       #** client.defaults
+                       #** kwargs))]
+      (. (. (first response.choices) message) content))))
 
 (defn find-prompt [#^ str name * [caller "."]]
   "Locate a prompt file, `name.prompt`.

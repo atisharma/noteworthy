@@ -21,7 +21,7 @@ Your output must be a single JSON array. Each object within the array must stric
 1.  **`date`**: If the information pertains to a specific event, use the date of that event in `YYYY-MM-DD` format. If the text describes a situation or state over a period (e.g., "by 1964"), use the approximate date if possible, or `null` if the date is too vague or not the central point of the record. If the source provides its own publication date that is relevant, you may use that, but the event date is preferred. If no date is present, use `null`.
 2.  **`title`**: Create a concise, descriptive title for the note. This title should be a clear, informative label for the central fact or event.
 3.  **`idea`**: State the principal point in a single, unambiguous, declarative sentence. This is the core factual assertion that a user might search for.
-4.  **`details`**: Provide all necessary background information to make the `idea` completely comprehensible without referring to any other document. Include key figures, data points, methodology, locations, and arguments that substantiate the main idea. If the source provides an explicit insight or significance, include it here to ensure the atom is self-contained.
+4.  **`details`**: Provide all necessary background information to make the `idea` completely comprehensible without referring to any other document. Include key figures, data points, methodology, locations, and arguments that substantiate the main idea. Use latex for any mathematics. If the source provides an explicit insight or significance, include it here to ensure the atom is self-contained.
 
 ### Critical Constraints and Style Rules
 
@@ -30,7 +30,7 @@ Your output must be a single JSON array. Each object within the array must stric
 3.  **No Hallucination**: Do not invent any information, date, or insight that is not explicitly supported by the source text.
 4.  **Specificity:** If a source text contains multiple distinct ideas, events, or findings, you MUST create a separate JSON object for each.
 5.  **Length**: The combined text of the `title`, `idea`, and `details` fields for any single object should be between 100 and 400 words.
-6.  **Final Output Format**: Your entire response must be the raw JSON array. Do not include any introductory or concluding text. Do not wrap the output in markdown code fences.
+6.  **Final Output Format**: Your entire response must be the raw JSON array. Do not include any introductory or concluding text. Do not wrap the output in markdown code fences. Any mathematical expressions should be expressed in latex.
 
 ---
 

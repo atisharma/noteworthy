@@ -8,7 +8,7 @@ synthesis, and record it in vector databases.
 (require hyrule [-> ->> of])
 (require hyjinx.llm [definstruct])
 
-(import asyncio [run gather Semaphore Lock])
+(import asyncio [run gather Lock])
 (import collections.abc [Generator])
 (import itertools [chain])
 
@@ -41,15 +41,14 @@ synthesis, and record it in vector databases.
                          load-prompt
                          validate])
 
-(setv logger (logging.getLogger __package__))
-
 (setv config (load-config))
+
+(setv logger (logging.getLogger __package__))
 
 (setv facts-vdb (db.faiss (Path (:vdb-path config) "facts"))
       insights-vdb (db.faiss (Path (:vdb-path config) "insights")))
 
-(setv _distil-token-length (:token-length config 6000)
-      _max_concurrent_tasks (:concurrency config 4))
+(setv _distil-token-length (:token-length config 7000))
 
 ;; The vdb write and insert lock
 (setv lock (Lock))
@@ -270,7 +269,7 @@ synthesis, and record it in vector databases.
 
 
 (defn distil-files [#^ (| Path str) fname-or-directory]
-  "Distil all files under a directory (recursively).
+  "Distil file or all files under a directory (recursively).
   Splits are made according to file type.
   Returns a list of knowledge atoms."
   (cond
@@ -278,13 +277,19 @@ synthesis, and record it in vector databases.
     (run (distil-file fname-or-directory))
 
     (.is-dir (Path fname-or-directory))
-    (with [pbar (tqdm (filenames fname-or-directory))] ; `filenames` ignores certain directories by default
-      (for [fname pbar]
-        (.set-description pbar fname)
-        (run (distil-file fname))))
+    (run (distil-dir fname-or-directory))
 
     :else
     (raise (FileNotFoundError fname-or-directory))))
+
+(defn :async distil-dir [#^ (| Path str) directory]
+  "Distil all files under a directory (recursively).
+  Splits are made according to file type.
+  Returns a list of knowledge atoms."
+  ;; `filenames` ignores certain directories by default
+  (let [pbar (async-tqdm (filenames directory) :desc directory)]
+    (for [:async fname pbar]
+      (await (distil-file fname)))))
 
 (defn :async distil-file [#^ (| Path str) fname]
   "Distils the contents of the text file with path `fname` into a list of
@@ -301,16 +306,18 @@ synthesis, and record it in vector databases.
     list[dict]: A list of dictionaries, where each dictionary is a knowledge atom.
     Returns empty list on failure."
   ;; TODO overlap of approx. 900 tokens
-
-  (defn distil-fname [text]
-    (distil text :source fname))
-
-  (let [sem (Semaphore _max_concurrent_tasks)
-        ft (filetype fname)
+  (let [ft (filetype fname)
         chunks (try
                  (split._chunk-by-filetype (slurp fname) ft :max-length _distil-token-length)
                  (except [e [Exception]]
-                   (logger.warn f"Error in `foundry/distil-file` while splitting {fname}: {e}.")
-                   (raise (NoteWorthyError f"Error in `foundry/distil-file` while splitting {fname}: {e}."))))]
-    (with [:async _ sem]
-      (await (async-tqdm.gather #* (map distil-fname chunks) :leave False)))))
+                   (logger.error f"Error in `foundry/distil-file` while splitting {fname}: {e}.")))]
+
+    (defn :async distil-fname [text]
+      (try
+        (await (distil text :source fname))
+        (except [e [NoteWorthyError]]
+          (logger.error f"Error in `foundry/distil-file` distilling {fname}: {e}."))))
+
+    (await (async-tqdm.gather #* (map distil-fname chunks)
+                              :leave False
+                              :desc (. (Path fname) name)))))
