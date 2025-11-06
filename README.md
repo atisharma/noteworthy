@@ -182,13 +182,19 @@ LLM-related tools for command-line use. These may be moved to another project.
 - noteworthy/mcp_server [MCP server, exposes knowledge tools]
 
 
-## Install / upgrade
+## Install / upgrade / docker
 
 In your venv,
 
 ```bash
 $ pip install -U nwy
 ```
+
+Check the config examples in the `config/` directory, and place them in their
+respective directories, `$XDG_CONFIG_HOME/fvdb/` and
+`$XDG_CONFIG_HOME/noteworthy`, each as `config.toml`. If you use docker, the
+`config` directory here is copied to the image and set as the config home (see
+`Dockerfile`). Alternatively, you can mount a docker volume over `/app/config`.
 
 
 ## Command-line usage

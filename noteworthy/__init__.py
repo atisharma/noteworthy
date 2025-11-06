@@ -1,4 +1,4 @@
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 import hy
 from noteworthy.pipelines import pdf_to_markdown, pdf_to_latex, img_to_markdown, img_to_latex

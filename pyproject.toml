@@ -38,6 +38,9 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/atisharma/noteworthy"
 
+[tool.setuptools]
+packages = ["noteworthy"]
+
 [tool.setuptools.dynamic]
 readme = {file = "README.md", content-type = "text/markdown"}
 version = {attr = "noteworthy.__version__"}
