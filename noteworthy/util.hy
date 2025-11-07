@@ -15,10 +15,6 @@ Utilities that don't fit anywhere else.
 (import trag.template [file-exists])
 
 
-(setv config (load-config)
-      _max-concurrent-tasks (:concurrency config 4)
-      api-limiter (Semaphore _max-concurrent-tasks))  
-
 (defclass NoteWorthyError [RuntimeError])
 (defclass NoteWorthyWarning [UserWarning])
 
@@ -38,6 +34,11 @@ Utilities that don't fit anywhere else.
               (config))]
     {"vdb_path" (Path (user-state-path __package__ :ensure-exists True))
      #** cfg}))
+
+;; has to appear after load-config function definition
+(setv _config (load-config)
+      _max-concurrent-tasks (:concurrency _config 4)
+      api-limiter (Semaphore _max-concurrent-tasks))  
 
 (defn chat-client [#^ str client]
   "Create a chat client object from the specification in the config file.
