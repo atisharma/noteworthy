@@ -1,4 +1,5 @@
 (import click)
+(import asyncio [run])
 (import json [dumps])
 
 (import noteworthy.pipelines [pdf-to-latex
@@ -62,9 +63,29 @@
   distil [files-or-directories]
   (import noteworthy [foundry])
   (for [file-or-directory files-or-directories]
-    (let [records (foundry.distil-files file-or-directory)])))
+    (foundry.distil-files file-or-directory)))
   
 (cli.add-command distil)
+
+(defn ; distil-urls
+  [(click.command)
+   (click.argument "urls" :nargs -1)]
+  distil-url [urls]
+  (import noteworthy [mcp-server])
+  (for [url urls]
+    (run (mcp-server.distil-url url))))
+  
+(cli.add-command distil-url)
+
+(defn ; distil-arxiv
+  [(click.command)
+   (click.argument "arxiv-ids" :nargs -1)]
+  distil-arxiv [arxiv-ids]
+  (import noteworthy [mcp-server])
+  (for [arxiv-id arxiv-ids]
+    (run (mcp-server.distil-arxiv arxiv-id))))
+  
+(cli.add-command distil-arxiv)
 
 (defn ; recall
   [(click.command)

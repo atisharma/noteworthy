@@ -156,17 +156,19 @@ that also.
 ***
 
 
-## CLI Tools
+## Command-line usage of tools
+
+See `$ nwy --help`.
 
 Versions of `distil`, `recall` and `synthesize` are available as cli commands
-for use with files and directories.
+for use with files and directories as `nwy distil` etc.
 
 LLM-related tools for command-line use. These may be moved to another project.
 
-- `pdf2md`: convert pdf (as image) to markdown
-- `pdf2latex`: convert pdf (as image) to latex
-- `img2md`: convert image to markdown
-- `img2latex`: convert image to latex
+- `nwy pdf2md`: convert pdf (as image) to markdown
+- `nwy pdf2latex`: convert pdf (as image) to latex
+- `nwy img2md`: convert image to markdown
+- `nwy img2latex`: convert image to latex
 
 - review: Act as a reviewer for a paper (TBD)
 - editor: Act as an editor for a paper (TBD)
@@ -197,7 +199,7 @@ respective directories, `$XDG_CONFIG_HOME/fvdb/` and
 `Dockerfile`). Alternatively, you can mount a docker volume over `/app/config`.
 
 
-## Command-line usage
+## Other command-line tools
 
 For the distillation step in particular, you might want to use the cli commands.
 
